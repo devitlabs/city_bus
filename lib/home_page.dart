@@ -130,7 +130,7 @@ class _HomePageState extends State<HomePage> {
   Future setCustomMarker() async {
     final marker = await BitmapDescriptor.fromAssetImage(ImageConfiguration.empty, "assets/location.png");
     setState(() {
-      avatar = marker;v
+      avatar = marker;
     });
   }
 
