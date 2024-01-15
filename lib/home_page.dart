@@ -34,6 +34,7 @@ class _HomePageState extends State<HomePage> {
   _init() async {
     await setCustomMarker();
     _location = Location();
+    await _location?.changeSettings(accuracy: LocationAccuracy.high, interval: 1000, distanceFilter: 5);
     setState(() {
       _cameraPosition = CameraPosition(
           target: const LatLng(5.358343, -4.027523), // this is just the example lat and lng for initializing
