@@ -51,6 +51,23 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
     }
   }
 
+  Future<void> _startTracking() async {
+    _locationStream = Geolocator.getPositionStream(locationSettings: LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10
+    )).listen((Position position) async {
+      if (track) {
+        await _writeToCsv(position);
+        // You can update the UI or perform other tasks with the current location here
+        print('Location Updated: ${position.latitude}, ${position.longitude}');
+      }
+    });
+  }
+
+  Future<void> _stopTracking() async {
+    _locationStream?.cancel();
+  }
+
   @override
   void initState() {
     _init();
@@ -215,12 +232,10 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
                     track = !track;
                   });
 
-                  while (track) {
-                    final currentLocation = await _getPosition(LocationAccuracy.high);
-                    if (currentLocation != null ) {
-                      moveToPosition(latLng: LatLng(currentLocation.latitude, currentLocation.longitude));
-                    }
-                    await Future.delayed(Duration(seconds: 1));
+                  if (track) {
+                    await _startTracking();
+                  } else {
+                    await _stopTracking();
                   }
 
                 },
