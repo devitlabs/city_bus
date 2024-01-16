@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/utils.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:path_provider/path_provider.dart';
+import 'dart:convert';
+import "package:universal_html/html.dart" as html;
 
 
 class GoogleMapScreen extends StatefulWidget {
@@ -52,14 +54,13 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   }
 
   Future<void> _startTracking() async {
-    _locationStream = Geolocator.getPositionStream(locationSettings: LocationSettings(
+    _locationStream = Geolocator.getPositionStream(locationSettings: const LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10
     )).listen((Position position) async {
       if (track) {
-        await _writeToCsv(position);
-        // You can update the UI or perform other tasks with the current location here
-        print('Location Updated: ${position.latitude}, ${position.longitude}');
+        await _addData(position);
+        await moveToPosition(latLng: LatLng(position.latitude, position.longitude));
       }
     });
   }
@@ -90,18 +91,28 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
     );
   }
 
-  Future<void> _writeToCsv(Position position) async {
+  Future<void> _addData(Position position) async {
     final csvRow = [position.latitude, position.longitude, DateTime.now().toString()];
     _csvData.add(csvRow);
-
-    final csvString = ListToCsvConverter().convert(_csvData);
-    final file = await _getLocalFile();
-    await file.writeAsString(csvString);
   }
 
-  Future<File> _getLocalFile() async {
-    final directory = await getApplicationDocumentsDirectory();
-    return File('${directory.path}/location_data.csv');
+  Future<void> _downloadCSV() async {
+    final csvString = ListToCsvConverter().convert(_csvData);
+
+    // Create a Blob from the CSV string
+    final blob = html.Blob([Uint8List.fromList(utf8.encode(csvString))]);
+
+    // Create an object URL from the Blob
+    final url = html.Url.createObjectUrlFromBlob(blob);
+
+    // Create a link element with the download attribute and click it
+    final anchor = html.AnchorElement(href: url)
+      ..target = 'blank'
+      ..download = 'location_data.csv'  // Specify the filename
+      ..click();
+
+    // Revoke the object URL to free resources
+    html.Url.revokeObjectUrl(url);
   }
 
   @override
@@ -236,6 +247,9 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
                     await _startTracking();
                   } else {
                     await _stopTracking();
+                    await _downloadCSV();
+                    await Future.delayed(Duration(seconds: 2));
+                    _csvData = [];
                   }
 
                 },
