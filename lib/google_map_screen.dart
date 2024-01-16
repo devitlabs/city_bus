@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/utils.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 
 
 class GoogleMapScreen extends StatefulWidget {
@@ -18,7 +21,6 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
 
   final Completer<GoogleMapController> _googleMapController  = Completer<GoogleMapController>();
   double zoom = 18 ;
-  Stream<Position>? _locationStream;
   PositionGeo pointA = PositionGeo(5.285230, -3.979946);
   double latitude = 0;
   double longitude = 0;
@@ -29,6 +31,9 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   bool start  = false;
   bool track  = false;
   List<PositionGeo> positions = [];
+  List<List<dynamic>> _csvData = [];
+  StreamSubscription<Position>? _locationStream;
+
 
   @override
   void dispose() {
@@ -66,6 +71,20 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
         target: LatLng(latitude, longitude), // this is just the example lat and lng for initializing
         zoom: zoom
     );
+  }
+
+  Future<void> _writeToCsv(Position position) async {
+    final csvRow = [position.latitude, position.longitude, DateTime.now().toString()];
+    _csvData.add(csvRow);
+
+    final csvString = ListToCsvConverter().convert(_csvData);
+    final file = await _getLocalFile();
+    await file.writeAsString(csvString);
+  }
+
+  Future<File> _getLocalFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File('${directory.path}/location_data.csv');
   }
 
   @override
@@ -129,7 +148,11 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
                 backgroundColor: start ? Colors.red : Colors.blue,
                 foregroundColor: Colors.white,
                 onPressed: () async {
-                  moveToPosition(latLng: LatLng(widget.position.latitude, widget.position.longitude));
+                  final currentLocation = await _getPosition(LocationAccuracy.high);
+                  if (currentLocation != null ) {
+                    moveToPosition(latLng: LatLng(currentLocation.latitude, currentLocation.longitude));
+                  }
+
                 },
                 child: Icon(Icons.home),
               ),
@@ -187,14 +210,17 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
                 backgroundColor: track ? Colors.red : Colors.green,
                 foregroundColor: Colors.white,
                 onPressed: () async {
+
                   setState(() {
                     track = !track;
                   });
 
                   while (track) {
                     final currentLocation = await _getPosition(LocationAccuracy.high);
-                    print("Lat : ${currentLocation?.latitude} long ${currentLocation?.longitude}");
-                    await Future.delayed(Duration(milliseconds: 100));
+                    if (currentLocation != null ) {
+                      moveToPosition(latLng: LatLng(currentLocation.latitude, currentLocation.longitude));
+                    }
+                    await Future.delayed(Duration(seconds: 1));
                   }
 
                 },
