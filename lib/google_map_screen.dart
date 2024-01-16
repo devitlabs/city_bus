@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_map/utils.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import "package:universal_html/html.dart" as html;
 
@@ -99,20 +100,10 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   Future<void> _downloadCSV() async {
     final csvString = ListToCsvConverter().convert(_csvData);
 
-    // Create a Blob from the CSV string
-    final blob = html.Blob([Uint8List.fromList(utf8.encode(csvString))]);
+    final directory = await getExternalStorageDirectory();
+    print('Dir ${directory?.path}');
 
-    // Create an object URL from the Blob
-    final url = html.Url.createObjectUrlFromBlob(blob);
-
-    // Create a link element with the download attribute and click it
-    final anchor = html.AnchorElement(href: url)
-      ..target = 'blank'
-      ..download = 'location_data.csv'  // Specify the filename
-      ..click();
-
-    // Revoke the object URL to free resources
-    html.Url.revokeObjectUrl(url);
+    _csvData = [];
   }
 
   @override
@@ -247,9 +238,9 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
                     await _startTracking();
                   } else {
                     await _stopTracking();
+                    print(_csvData);
                     await _downloadCSV();
                     await Future.delayed(Duration(seconds: 2));
-                    _csvData = [];
                   }
 
                 },
