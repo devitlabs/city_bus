@@ -100,8 +100,13 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   Future<void> _downloadCSV() async {
     final csvString = ListToCsvConverter().convert(_csvData);
 
-    final directory = await getExternalStorageDirectory();
-    print('Dir ${directory?.path}');
+    final directory = "/storage/emulated/0/Documents";
+    final date = DateTime.now();
+    final fileName = "locationcsv-${date.year}${date.month}${date.day}-${date.hour}H${date.minute}.csv";
+    String filePath = '$directory/$fileName';
+
+    File file = File(filePath);
+    await file.writeAsString(csvString);
 
     _csvData = [];
   }
