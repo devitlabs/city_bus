@@ -27,6 +27,10 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   PositionGeo pointA = PositionGeo(5.285230, -3.979946);
   double latitude = 0;
   double longitude = 0;
+
+  double currentLatitude = 0;
+  double currentLongitude = 0;
+
   PositionGeo pointB = PositionGeo(5.303519, -4.000889);
   CameraPosition? _cameraPosition;
   var avatar = BitmapDescriptor.defaultMarker;
@@ -61,7 +65,11 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
     )).listen((Position position) async {
       if (track) {
         await _addData(position);
-        await moveToPosition(latLng: LatLng(position.latitude, position.longitude));
+        setState(() {
+          currentLatitude = position.latitude;
+          currentLongitude = position.latitude;
+        });
+        await moveToPosition(latLng: LatLng(currentLatitude, currentLongitude));
       }
     });
   }
@@ -77,6 +85,8 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   }
 
   _init() async {
+    currentLatitude = widget.position.latitude;
+    currentLongitude = widget.position.longitude;
     await setCustomMarker();
     int numPositions = 1000;
 
@@ -85,6 +95,7 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
 
     latitude = pointA.latitude;
     longitude =  pointA.longitude;
+
 
     _cameraPosition = CameraPosition(
         target: LatLng(latitude, longitude), // this is just the example lat and lng for initializing
@@ -151,8 +162,8 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
           Marker(
             markerId: MarkerId("Fabrice"),
             position: LatLng(
-              widget.position.latitude,
-              widget.position.longitude,
+              currentLatitude,
+              currentLongitude,
             ),
             icon: avatar,
             infoWindow: const InfoWindow(
@@ -269,14 +280,16 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
 
   Future moveToPosition({required LatLng latLng}) async {
     GoogleMapController mapController = await _googleMapController.future;
-    mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-            CameraPosition(
-                target: latLng,
-                zoom: zoom
-            )
-        )
-    );
+    setState(() {
+      mapController.animateCamera(
+          CameraUpdate.newCameraPosition(
+              CameraPosition(
+                  target: latLng,
+                  zoom: zoom
+              )
+          )
+      );
+    });
   }
 
 
