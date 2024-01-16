@@ -59,19 +59,25 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   }
 
   Future<void> _startTracking() async {
-    _locationStream = Geolocator.getPositionStream(locationSettings: const LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10
-    )).listen((Position position) async {
-      if (track) {
-        await _addData(position);
+    while (track) {
+      final currentLocation = await _getPosition(LocationAccuracy.high);
+
+      if (currentLocation != null ) {
+        await Future.delayed(Duration(milliseconds: 100));
+
         setState(() {
-          currentLatitude = position.latitude;
-          currentLongitude = position.latitude;
+          currentLatitude = currentLocation.latitude;
+          currentLongitude = currentLocation.longitude;
         });
-        await moveToPosition(latLng: LatLng(currentLatitude, currentLongitude));
+        await _addData(currentLocation);
+
+        moveToPosition(latLng: LatLng(currentLocation.latitude, currentLocation.longitude));
+
+        await Future.delayed(Duration(milliseconds: 400));
+
       }
-    });
+    }
+
   }
 
   Future<void> _stopTracking() async {
@@ -184,10 +190,16 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
                 foregroundColor: Colors.white,
                 onPressed: () async {
                   final currentLocation = await _getPosition(LocationAccuracy.high);
+
                   if (currentLocation != null ) {
+
+                    setState(() {
+                      currentLatitude = currentLocation.latitude;
+                      currentLongitude = currentLocation.longitude;
+                    });
+
                     moveToPosition(latLng: LatLng(currentLocation.latitude, currentLocation.longitude));
                   }
-
                 },
                 child: Icon(Icons.home),
               ),
