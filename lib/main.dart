@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-
 import 'google_map_screen.dart';
 
 void main() {
