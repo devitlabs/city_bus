@@ -12,6 +12,7 @@ import 'dart:convert';
 import "package:universal_html/html.dart" as html;
 
 
+
 class GoogleMapScreen extends StatefulWidget {
   final Position position;
   const GoogleMapScreen({ Key? key, required this.position }) : super(key: key);
@@ -34,6 +35,7 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   PositionGeo pointB = PositionGeo(5.303519, -4.000889);
   CameraPosition? _cameraPosition;
   var avatar = BitmapDescriptor.defaultMarker;
+  var bus = BitmapDescriptor.defaultMarker;
   int increment = 0 ;
   bool start  = false;
   bool track  = false;
@@ -59,21 +61,24 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   }
 
   Future<void> _startTracking() async {
+
     while (track) {
+
       final currentLocation = await _getPosition(LocationAccuracy.high);
 
       if (currentLocation != null ) {
-        await Future.delayed(Duration(milliseconds: 100));
+        await Future.delayed(const Duration(milliseconds: 100));
 
         setState(() {
           currentLatitude = currentLocation.latitude;
           currentLongitude = currentLocation.longitude;
         });
+
         await _addData(currentLocation);
 
-        moveToPosition(latLng: LatLng(currentLocation.latitude, currentLocation.longitude));
+        //moveToPosition(latLng: LatLng(currentLocation.latitude, currentLocation.longitude));
 
-        await Future.delayed(Duration(milliseconds: 400));
+        await Future.delayed(Duration(milliseconds: 100));
 
       }
     }
@@ -160,7 +165,7 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
               latitude,
               longitude,
             ),
-            icon: avatar,
+            icon: bus,
             infoWindow: const InfoWindow(
               title: 'BUS 1',
             ),
@@ -283,9 +288,11 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
 
 
   Future setCustomMarker() async {
-    final marker = await BitmapDescriptor.fromAssetImage(ImageConfiguration.empty, "assets/location.png");
+    final markerPerson = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(100,100)), "assets/location.png");
+    final markerBus = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(50,50)), "assets/bus.png");
     setState(() {
-      avatar = marker;
+      avatar = markerPerson;
+      bus = markerBus;
     });
   }
 
